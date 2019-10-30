@@ -70,7 +70,22 @@
 例子如下：1^3+5^3+3^3=153,那么153就是一个水仙花数
 前两天在松山湖和龙岗两边跑，深刻觉得身体才是革命的本钱，以后还是多锻炼身体
 好了废话不多说，先说一下我当时的写法
-
+isFlower(){
+var a,b
+var arr=[]
+for( var i = a;i < b;i ++ ){
+    var bit = parseInt( i % 10 );
+    var decade = parseInt( ( i / 10 ) % 10 );
+    var hundreds = parseInt( i / 100 );
+    if( Math.pow(bit,3) + Math.pow(decade,3) + Math.pow(hundreds,3) == 100 * hundreds+10 * decade + bit ){
+        console.log(i)
+        arr.push(i)
+    };
+};
+console.log(arr.length)
+}
+然后求出一共有几个水仙花数，但是这个只能求出1000以内的
+到时候搬家完毕之后再进行解决
 
 
 
