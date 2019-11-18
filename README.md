@@ -89,4 +89,5 @@ console.log(arr.length)
 最有印象的是讲一下for，for in,for of和foreach的区别，这个留着下次说（先把房子找好）
 
 
-
+关于数组去重
+https://www.cnblogs.com/wisewrong/p/9642264.html
