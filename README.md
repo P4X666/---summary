@@ -89,5 +89,37 @@ console.log(arr.length)
 最有印象的是讲一下for，for in,for of和foreach的区别，这个留着下次说（先把房子找好）
 
 
-关于数组去重
+关于数组去重，参考链接
 https://www.cnblogs.com/wisewrong/p/9642264.html
+具体方法为for...of + Object
+
+首先创建一个空对象，然后用 for 循环遍历
+利用对象的属性不会重复这一特性，校验数组元素是否重复
+
+function distinct(a, b) {
+    let arr = a.concat(b)
+    let result = []
+    let obj = {}
+
+    for (let i of arr) {
+        if (!obj[i]) {
+            result.push(i)
+            obj[i] = 1
+        }
+    }
+
+    return result
+}
+今天遇到的一个难题
+同样利用对象属性不会重复的特性
+情况如下：渲染一个数组，然后在点击时会有选中的效果
+之前处理类似的按钮组的时候，都是直接命名123，通过标记的方式来做判断
+这种数组特别长的就没办法判断，我就利用对象属性不会重复的特性进行单个的标记
+首先声明一个对象
+let isSelect={select：''}
+在html中加上点击事件，并获取被点击的那个值,然后赋值给对象
+@click="click(item)"
+click(value){
+    isSelect.select=value
+}
+最后进行判定，如果当前值与对象中的属性值相等，那么就绑定上选中的状态
