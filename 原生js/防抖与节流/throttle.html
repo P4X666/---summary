@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>防抖与节流</title>
+</head>
+<body>
+    <button class="throttleClass" >防抖</button>
+</body>
+<script>
+let n=0
+let throttleTest = document.getElementsByClassName('throttleClass')[0]
+let fn1=()=>{
+    console.log(n++)
+}
+let nowtime=function() {
+    return new Date().getTime();
+  };
+// let throttle=function(func, wait, options) {
+//     var timeout, context, args, result;
+//     var previous = 0;
+//     if (!options) options = {};
+
+//     var later = function() {
+//       previous = options.leading === false ? 0 : nowtime();
+//       timeout = null;
+//       result = func.apply(context, args);
+//       if (!timeout) context = args = null;
+//     };
+
+//     var throttled = function() {
+//       var now = nowtime();
+//       if (!previous && options.leading === false) previous = now;
+//       var remaining = wait - (now - previous);
+//       context = this;
+//       args = arguments;
+//       if (remaining <= 0 || remaining > wait) {
+//         if (timeout) {
+//           clearTimeout(timeout);
+//           timeout = null;
+//         }
+//         previous = now;
+//         result = func.apply(context, args);
+//         if (!timeout) context = args = null;
+//       } else if (!timeout && options.trailing !== false) {
+//         timeout = setTimeout(later, remaining);
+//       }
+//       return result;
+//     };
+
+//     throttled.cancel = function() {
+//       clearTimeout(timeout);
+//       previous = 0;
+//       timeout = context = args = null;
+//     };
+
+//     return throttled;
+//   };
+let throttle=(func, wait)=> {
+    
+    let timeout, result;
+    let previous = 0;
+
+    let later = ()=> {
+        previous=nowtime()//2000
+        result=func()
+        timeout = null;
+    };
+
+    let throttled = ()=> {
+        // debugger
+        let now = nowtime();
+        if (!previous)previous = nowtime();
+        let remaining = wait - (now - previous);
+
+        if (!timeout) {
+            timeout = setTimeout(later, remaining);//1000
+        }
+        return result;
+    };
+    return throttled;
+};
+// let throttle = (fn, delay) => {
+//     let flag = true;
+//     return function (...args) {
+//         if (!flag) return;
+//         flag = false;
+//         setTimeout(() => {
+//             fn(...args);
+//             flag = true;
+//         }, delay)
+//     }
+// }
+throttleTest.onclick=throttle(fn1,1000)
+</script>
+</html>

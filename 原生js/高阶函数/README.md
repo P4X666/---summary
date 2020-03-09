@@ -26,3 +26,16 @@ console.log(arr3)
 ```
 理解此方法有助于理解[compose函数](../compose和pipe/README.md)
 
+#### filter
+用途
+顾名思义就是过滤的意思
+需求：筛选出年龄大于21的成员
+```js
+var persons=[
+    {name:'Peter',age:21},
+    {name:'Mark',age:18},
+    {name:'Jane',age:31},
+]
+var newpersons=persons.filter(item=>item.age>21)
+console.log(newpersons)
+```
