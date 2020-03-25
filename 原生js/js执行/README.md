@@ -33,7 +33,20 @@ new Promise(resolve => {
 });  
 ```  
 ![Alt js执行顺序](../../book/js执行顺序_1.png)  
+```js
+ 1
+ 4
+ start
+ promise inner2
+ 3
+ promise then2
+ Promise {<resolved>: undefined}
+ 2
+ setTimeout
+ promise inner1
+ promise then1
 
+```
 在浏览器中打印出结果，我们发现即使大家都是回调，执行的顺序也有不同  
 这是因为浏览器中还有宏任务和微任务之分  
 **只有微任务执行完之后，宏任务才会被执行**  
