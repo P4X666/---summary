@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>underscore解析</title>
+</head>
+<body>
+	
+<script src="./underscore.js"></script>
+<script>
+//// 第一步：underscore的引用
+	  //// 第一种，直接引用对象上的静态方法
+	  		//  如  _.unique([1,2,3,4,5,1,2,3])  
+	  //// 第二种通过实例化一个对象，然后调用此对象上的方法
+			  //  如 _([1,2,3,4,5,1,2,3]).unique()   
+//// 第二步：开启链式调用
+      _.chain([1,2,3,4,5,1,2,3]).unique().max().value()
+
+</script>
+</body>
+</html>
