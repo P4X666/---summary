@@ -60,8 +60,6 @@
 
 // 第二步
 
-
-
 (function(root) {
 	//构造函数      
 	let _ = function(obj) { //数据源
