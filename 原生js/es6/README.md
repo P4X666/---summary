@@ -23,7 +23,7 @@
 的可变性，导致js不能去做过于复杂的事情，因为它很容易就会被修改  
 
 比如说我希望一个对象有着一个永远不会被篡改的值  
-这就涉及到Symbol的使用，属性私有化 - 数据保护
+这就涉及到Symbol的使用，属性私有化 - 数据保护  
 ```js  
 
         // 我希望一个Person的品质在出生以后就能够被确定，并一直保存到死  
@@ -39,8 +39,8 @@
         console.log(p1.character);  
         // 很明显这个属性被修改了  
 ```  
-        这个时候我们就想，既然对象很容易被修改，那么我们使用函数
-        不让你拿到这个对象不就好了
+        这个时候我们就想，既然对象很容易被修改，那么我们使用函数  
+        不让你拿到这个对象不就好了  
 ```js  
         var Person = (function() {  
             var _character = '';  
@@ -56,33 +56,45 @@
         var p1 = new Person('盖伦', '勇敢');  
         console.log(p1);  
         console.log(p1.getcharacter());  
-        // 天真，难道忘了刚刚说的，在js里面万物皆对象？
-        var character=function(){
-            return '怂'
-        }
-        p1.__proto__.getcharacter=character
-        console.log(p1.getcharacter()); 
+        // 天真，难道忘了刚刚说的，在js里面万物皆对象？  
+        var character=function(){  
+            return '怂'  
+        }  
+        p1.__proto__.getcharacter=character  
+        console.log(p1);  
 ```  
-
+在js中，既可以通过prototype，给一个函数赋予一个方法，同样可以通过__proto__去更改这个方法。  
+那么，这个时候Symbol就应运而生了  
 ```js  
-        var Person = (function() {
+        var Person = (function() {  
 
-            let _character = Symbol('character');
+            let _character = Symbol('character');  
 
-            function P(name, character) {
-                this.name = name;
-                this[_character] = character;
-            }
+            function P(name, character) {  
+                this.name = name;  
+                this[_character] = character;  
+            }  
 
-            P.prototype.say = function() {
-                console.log(this[_character]);
-            }
+            P.prototype.say = function() {  
+                console.log(this[_character]);  
+            }  
 
-            return P;
+            return P;  
 
-        })();
+        })();  
 
-        var p1 = new Person('莫涛', '男');
-        console.log(p1);
-        console.log(p1[Symbol('character')])
+        var p1 = new Person('德莱文', '暴力');  
+        console.log(p1);  
+        console.log(p1[Symbol('character')])  
+        // 这个时候我们用同样的方法再试一次  
+        p1.__proto__.say=function(){  
+            return '怂'  
+        }  
+        console.log(p1.say())  
+        //  单单看结果的话，貌似我们也修改成功了  
+        // 但是，当我们去看p1的时候，我们发现p1并没有被改变，只是它里面的方法被改变了，  
+        //  其本身所返回的值却没有被改变  
+        console.log(p1)  
 ```  
+这样的话，我们在引用第三方库的时候，我们就可以通过类似于Symbol这样的数据结构来避免覆盖之类的问题  
+因为每个Symbol值都是独一无二的  
