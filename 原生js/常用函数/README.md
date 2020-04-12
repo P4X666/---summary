@@ -19,10 +19,10 @@ for(let i=0;i<=10;i++){
 console.log(count)  
 // 使用缓存函数  
 
-let memoize = function(func,hasher){  
-    let memoize = function(key){  
-        let cache = memoize.cache  
-        let address = '' + (hasher ? hasher.apply(this,arguments):key)  
+var memoize = function(func,hasher){  
+    var memoize = function(key){  
+        var cache = memoize.cache  
+        var address = '' + (hasher ? hasher.apply(this,arguments):key)  
         if(!cache[address]){  
             cache[address] = func.apply(this,arguments)  
         }  

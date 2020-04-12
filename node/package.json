@@ -1,0 +1,13 @@
+{
+  "name": "cli-demo-easy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cli-demo-easy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ma": "node ./cli-demo-easy.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
