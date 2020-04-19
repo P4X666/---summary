@@ -119,7 +119,7 @@ npm检测到package.json里面存在一个bin字段，它就同时在全局npm�
 当然了，这样做还有一个问题，那就是不论我们在哪里新建项目，这个项目始终都是在我们写的这个index.js同目录下生成的  
 我们需要做个改动，将__dirname修改为process.cwd()，然后大功告成  
 
-[详细代码]()  
+[详细代码](./index.js)  
 
 参考链接：  
 [node官网](nodejs.cn/api/process.html)  
