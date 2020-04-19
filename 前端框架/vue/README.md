@@ -181,3 +181,32 @@ vue的响应式原理的流程如下：
 其中DepCollection类的作用就相当于watcher，负责监听数据，每当数据产生时，通过depend数据收集，通过notify触发更新  
 而ref就相当于Data数据处理部分，将输入的数据改造成可以被监听的数据，通过getter将数据传给watcher进行依赖收集，通过setter触发watcher的notify函数  
 然后由notify函数触发渲染函数，最终实现了一个完整的响应式  
+上面是vue2所使用的方法，借助Object.defineProperty去实现响应式，而vue3则是采用了proxy,如果要进行更改，则只需要对Object.defineProperty部分更改即可
+```js
+let ref = initValue => {  
+  let value = initValue;  
+  let dep = new DepCollection();  
+
+//   return Object.defineProperty({}, "value", {  
+//     get() {  
+//       dep.depend();  
+//       return value;  
+//     },  
+//     set(newValue) {  
+//       value = newValue;  
+//       dep.notify();  
+//     }  
+//   });  
+    return new Proxy({value:initValue}, {
+        get(target, key, value) {
+          dep.depend();  
+          return target[key];  
+        },
+      
+        set(target, key, value) {
+          target[key]=value;  
+          dep.notify();
+        }
+      })
+};
+```
