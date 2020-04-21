@@ -176,13 +176,8 @@ onXChanged(() => {
 x.value = 2; // 3  
 x.value = 3; // 4  
 ```  
-vue的响应式原理的流程如下：  
-![Alt](../../book/2020-04-19-220756.png)  
-其中DepCollection类的作用就相当于watcher，负责监听数据，每当数据产生时，通过depend数据收集，通过notify触发更新  
-而ref就相当于Data数据处理部分，将输入的数据改造成可以被监听的数据，通过getter将数据传给watcher进行依赖收集，通过setter触发watcher的notify函数  
-然后由notify函数触发渲染函数，最终实现了一个完整的响应式  
-上面是vue2所使用的方法，借助Object.defineProperty去实现响应式，而vue3则是采用了proxy,如果要进行更改，则只需要对Object.defineProperty部分更改即可
-```js
+上面是vue2所使用的方法，借助Object.defineProperty去实现响应式，而vue3则是采用了proxy,如果要进行更改，则只需要对Object.defineProperty部分更改即可  
+```js  
 let ref = initValue => {  
   let value = initValue;  
   let dep = new DepCollection();  
@@ -197,16 +192,119 @@ let ref = initValue => {
 //       dep.notify();  
 //     }  
 //   });  
-    return new Proxy({value:initValue}, {
-        get(target, key, value) {
+    return new Proxy({value:initValue}, {  
+        get(target, key, value) {  
           dep.depend();  
           return target[key];  
-        },
+        },  
       
-        set(target, key, value) {
+        set(target, key, value) {  
           target[key]=value;  
-          dep.notify();
-        }
-      })
-};
+          dep.notify();  
+        }  
+      })  
+};  
+```  
+vue的响应式原理的流程如下：  
+![Alt](../../book/2020-04-19-220756.png)  
+其中onXChanged的作用就相当于watcher，负责监听数据，每当数据发生改动时，做出相应的变化。而DepCollection通过depend收集watcher，通过notify触发watcher更新  
+而ref就相当于Data数据处理部分，将输入的数据改造成可以被监听的数据，通过getter将数据传给DepCollection进行依赖收集，通过setter触发DepCollection的notify函数，
+最终实现了一个完整的响应式  
+这时候我们就可以拿着代码去测试了，然后我们发现一个很奇怪的事情
+```js
+let x,j,k;  
+let y;  
+let f = n => n++;  
+
+let active;  
+
+let Watcher = function(cb) {  
+  active = cb;  
+  active();  
+  active = null;  
+};  
+
+class DepCollection {  
+  constructor() {  
+    this.deps = new Set();  
+  }  
+  depend() {  
+    if (active) {  
+      this.deps.add(active);  
+    }  
+  }  
+  notify() {  
+    this.deps.forEach(dep => dep());  
+  }  
+}  
+
+let ref = initValue => {  
+  let value = initValue;  
+  let dep = new DepCollection();  
+
+  return Object.defineProperty({}, "value", {  
+    get() {  
+      dep.depend();  
+      return value;  
+    },  
+    set(newValue) {  
+      value = newValue;  
+      dep.notify();  
+    }  
+  });  
+};  
+
+x = ref(1);   
+j = ref(2);
+k = ref(3);
+Watcher(() => {    
+  console.log(f(x.value),f(j.value),f(k.value))  
+});  
+
+x.value = 5;   
+j.value = 5; 
+k.value = 5; 
+```
+在打印之后，我们得到了这样的数据
+```js
+1 2 3//初始化时所返回的值
+5 2 3//x改变时所导致的更新
+5 5 3//j改变时所导致的更新
+5 5 5//k改变时所导致的更新
+```
+我们发现每一次数据的更新都会导致所有的数据的变化，如果是DOM渲染，那么必定会影响性能
+这时我们需要一个函数批量完成上面的操作，这个函数需要具备在所有同步任务完成后在执行的特性，
+我们发现promise刚好具备这个特性，详情请看[宏任务与微任务](../js执行/README.md)
+因为要批量更新，那么我们就从DepCollection类中的notify开始，将其立即完成的任务改成异步微任务
+```js
+let tasks=[]
+let nextTick=(cb)=>{
+  return Promise.resolve().then(cb)
+}
+let runtask=()=>{
+  let task
+  while(tasks.length>0){
+    task=tasks.shift()
+    task && task()
+  }
+}
+let collectTask=(cb)=>{
+    if(!tasks.includes(cb)){
+      tasks.push(cb)
+      nextTick(runtask)
+    } 
+}
+class DepCollection {  
+  constructor() {  
+    this.deps = new Set();  
+  }  
+  depend() {  
+    if (active) {  
+      this.deps.add(active);  
+    }  
+  }  
+  notify() {  
+    this.deps.forEach(dep => collectTask(dep));  
+  }  
+} 
 ```

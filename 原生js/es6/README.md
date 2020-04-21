@@ -170,3 +170,19 @@ set            underfined
 
 
 很明显，defineProperty是用来定义对象属性的，但是可以借助它属性里的get和set可以实现响应式
+```js
+var a={}
+var value=1
+Object.defineProperty(a, "value", {
+    get() {   
+      console.log('you get a value')
+      return value;  
+    },  
+    set(newValue) {  
+      console.log('you set a value')
+      value = newValue;   
+    }  
+}); 
+
+```
+每次当外界调用或者设置a的value值的时候就会触发get或set函数
