@@ -186,3 +186,31 @@ Object.defineProperty(a, "value", {
 
 ```
 每次当外界调用或者设置a的value值的时候就会触发get或set函数
+
+Object.defineProperty() 的问题主要有三个：
++ 不能监听数组的变化
++ 必须遍历对象的每个属性
++ 必须深层遍历嵌套的对象
+
+那么，什么是proxy呢，MDN的解释如下
+```
+Proxy 对象用于定义基本操作的自定义行为（如属性查找、赋值、枚举、函数调用等）
+```
+也就是说，Proxy是可以监听整个对象
++ 针对对象:针对整个对象,而不是对象的某个属性
++ 支持数组:不需要对数组的方法进行重载，省去了众多 hack
++ 嵌套支持: get 里面递归调用 Proxy 并返回
+```js
+let b=new Proxy({}, {
+    get (target, key, receiver) {
+    console.log('get', key)
+    return Reflect.get(target, key, receiver)
+  },
+  set (target, key, value, receiver) {
+    console.log('set', key, value)
+    return Reflect.set(target, key, value, receiver)
+  }
+})
+
+```
+

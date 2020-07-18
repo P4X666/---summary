@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <p>{{ arr }}</p>
+        <button v-on:click="arr_test">数组响应式检测</button>
+      </div>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+   <script>
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    arr: [],
+    num:0
+  },
+  methods: {
+    arr_test () {
+       switch (this.num) {
+           case 0:
+           this.num++
+           this.arr[0] = 1
+           console.log(this.arr)// 此时我们发现数组改变了，但是页面上的 arr 并没有发生任何改变，只有在push操作之后才刷新此次所赋的值
+               break;
+            case 1:
+           this.num++
+           this.arr.push(2)
+           console.log(this.arr)// 页面立即刷新了，说明此值的push操作被监听了的
+               break;
+           default:
+           this.arr=null // 页面立即刷新了，说明此值是被监听了的
+               console.log(this.arr)
+               break;
+       }
+      
+    }
+  }
+})
+   </script> 
+</body>
+</html>
