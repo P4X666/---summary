@@ -1,69 +1,4 @@
 
-// let path = require('path');
-// let fs = require('fs');
-// let vm = require('vm');
-// function Module(filename) {
-//     this.filename = filename;
-//     this.exports = {};
-//     this.loaded = false;
-
-// }
-// Module._cache = {}; //缓存
-// Module.__extentions = ['.js', '.json']    //后缀
-
-// Module._resolvePath = function (filename) {
-//     let p = path.resolve(__dirname, filename);
-
-//     if (!path.extname(p)) {
-//         for (var i = 0; i < Module.__extentions.length; i++) {
-//             let newPath = p + Module.__extentions[i]
-//             try { //accessSync如果文件不存在会报错
-//                 fs.accessSync(newPath)
-//                 return newPath
-//             } catch (e) {
-
-//             }
-//         }
-//     }
-//     return p
-// }
-// Module.wrapper = [
-//     "(function(exports,require,module,__dirname,__fikename){", "\n})"
-// ]
-// Module.wrap = function (script) {
-//     return Module.wrapper[0] + script + Module.wrapper[1]
-// }
-// Module.__extentions['js'] = function (module) {
-
-//     let script = fs.readFileSync(module.filename);
-//     let fnStr = Module.wrap(script)
-
-//     vm.runInThisContext(fnStr).call(module.exports, module.exports, req, module)
-// }
-
-// Module.prototype.load = function (filename) {
-//     //模块是json,js
-//     let ext = path.extname(filename).slice(1);
-//     Module.__extentions[ext](this);
-// }
-// function req(filename) {
-//     filename = Module._resolvePath(filename)
-//     let cacheModule = Module._cache[filename]
-//     if (cacheModule) {
-//         return cacheModule.exports
-//     }
-//     let module = new Module(filename)
-
-//     module.load(filename);
-//     Module._cache[filename] = module; //加入缓存
-//     module.loaded = true; // 表示当前模块是否加载完 
-//     return module.exports;
-// }
-
-// module.exports req
-// esult = req('a');
-// console.log(result)
-
 const path = require('path'); 
 const fs = require('fs'); 
 const vm = require('vm'); 
@@ -147,3 +82,5 @@ function req(id) {
 
 let str = req('./a'); 
 console.log(str);
+let json_test = req('./b')
+console.log(json_test);
