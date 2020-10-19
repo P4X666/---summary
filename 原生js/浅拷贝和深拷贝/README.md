@@ -23,11 +23,12 @@ console.log(copyObj1.name)//"timo"
 ```js
 let obj2={
     name:"king",
-    wife:['大大','二大','三大'],
+    wife:['大大','二大','三大',{'test':'test'}],
     run:()=>{
         console.log(this.name+"跑的飞快")
     },
-    date:new Date()
+    date:new Date(),
+    reg:/a/
 }
 ```
 如果这个时候还用上面的浅拷贝是明显行不通的
