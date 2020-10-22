@@ -4,6 +4,7 @@
 * [缓存函数](#缓存函数)  
 * [函数内的数组合并](#函数内的数组合并)
 * [计算页面渲染的详细时间](#计算页面渲染的详细时间)
+* [构建一个函数库](#构建一个函数库)
 
 ###  [缓存函数](#目录)
 ```js  
@@ -123,4 +124,52 @@ window.addEventListener("load", function() {
         }
     }, 0)
 });
+```
+
+### 构建一个函数库
+从0构建一个函数库，首先我们要写一个IIFE(又称自执行函数)，
+```js
+    (function (root) {
+        // console.log(root)
+        root.Codebase1 = function (x) {
+            this.uid = x
+        }
+
+        function test(params) {
+            console.log(params)
+        }
+        Codebase1.prototype.output = function (params) {
+            test(params)
+            this.uid += params
+            console.log(this.uid)
+            return this
+        }
+        Codebase1.prototype.$test = function (params) {
+            console.log(params)
+        }
+        return Codebase1
+    })(window)
+    let test1 = new Codebase1(1)
+    console.log(test1);
+
+
+        (Codebase2=function (x) {
+                this.uid = x
+
+                function test(params) {
+                    console.log(params)
+                }
+                this.output = function (params) {
+                    test(params)
+                    this.uid += params
+                    console.log(this.uid)
+                    return this
+                }
+                this.$test = function (params) {
+                    console.log(params)
+                }
+                return this
+        })()
+    let test2 = new Codebase2(1)
+    console.log(test2)
 ```
