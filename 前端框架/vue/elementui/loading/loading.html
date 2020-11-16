@@ -18,8 +18,8 @@
         }
 
         #loading {
-            width: 600px;
-            height: 600px;
+            width: 300px;
+            height: 300px;
             background-color: aqua;
             margin: auto;
         }
@@ -92,7 +92,8 @@
             lock: false,
             customClass: ''
         };
-        let fullscreenLoading;//用来保存弹窗实例
+        let fullscreenLoading;//用来保存全局弹窗实例
+        // 关闭弹窗的方法
         LoadingConstructor.prototype.close = function () {
             // 清除弹窗实例
             if (this.fullscreen) {
@@ -108,10 +109,12 @@
             this.visible = false;
         };
         let service = (options = {}) => {
+            // 合并options
             options = Object.assign({}, defaults, options);
             if (typeof options.target === 'string') {
                 options.target = document.querySelector(options.target);
             }
+
             options.target = options.target || document.body;
             if (options.target !== document.body) {
                 options.fullscreen = false;
@@ -126,6 +129,7 @@
                 el: document.createElement('div'),
                 data: options
             });
+            // 如果没有 target ，那么弹窗将会直接挂载在body上
             let parent = options.body ? document.body : options.target;
             parent.appendChild(instance.$el);
             Vue.nextTick(() => {
@@ -138,7 +142,7 @@
             return instance;
         }
 
-
+        // 挂载在 Vue 上
         Vue.prototype.$loading = service
 
         new Vue({
