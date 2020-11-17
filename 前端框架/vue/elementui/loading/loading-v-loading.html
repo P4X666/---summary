@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>loading组件以指令的形式调用-源码分析</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #loading {
+            width: 300px;
+            height: 300px;
+            background-color: aqua;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 因为loading组件是绝对定位，所以在扩展时会在父节点加上 el-loading-parent--relative-->
+        <div id="loading" class="el-loading-parent--relative" v-loading="fullscreenLoading" element-loading-text="拼命加载中"
+            element-loading-spinner="el-icon-loading" element-loading-background="rgba(0, 0, 0, 0.8)"></div>
+    </div>
+    <script src="../vue2.js"></script>
+    <script>
+
+        let _loading = Vue.component("loading", {
+            template: `
+            <transition name="el-loading-fade" @after-leave="handleAfterLeave">
+                <div
+                v-show="visible"
+                class="el-loading-mask"
+                :style="{backgroundColor: background || ''} "
+                :class="[customClass, { 'is-fullscreen': fullscreen }]">
+                    <div class="el-loading-spinner">
+                        <svg v-if="!spinner" class="circular" viewBox="25 25 50 50">
+                        <circle class="path" cx="50" cy="50" r="20" fill="none"/>
+                        </svg>
+                        <i v-else :class="spinner"></i>
+                        <p v-if="text" class="el-loading-text">{{ text }}</p>
+                    </div>
+                </div>
+            </transition>`,
+            data() {
+                return {
+                    text: null,
+                    spinner: null,
+                    background: null,
+                    fullscreen: true,
+                    visible: false,
+                    customClass: ''
+                };
+            },
+            methods: {
+                handleAfterLeave() {
+                    this.$emit('after-leave');
+                },
+                setText(text) {
+                    this.text = text;
+                }
+            }
+        })
+        function afterLeave(instance, callback, speed = 300, once = false) {
+            let called = false;
+            const afterLeaveCallback = function () {
+                if (called) return;
+                called = true;
+                if (callback) {
+                    callback.apply(null, arguments);
+                }
+            };
+
+            setTimeout(() => {
+                afterLeaveCallback();
+            }, speed + 100);
+        };
+
+        const Mask = Vue.extend(_loading);
+        // const loadingDirective = {};
+        // loadingDirective.install = Vue => {
+        const toggleLoading = (el, binding) => {
+            if (binding.value) {
+                Vue.nextTick(() => {
+                    // 判断 fullscreen 修饰符
+                    if (binding.modifiers.fullscreen) {
+                        el.originalPosition = document.body['position'];
+                        el.originalOverflow = document.body['overflow'];
+
+                        el.mask.classList.add('is-fullscreen')
+                        insertDom(document.body, el, binding);
+                    } else {
+                        el.mask.classList.remove('is-fullscreen');
+                        // 判断是否要绑定在 body 上
+                        if (binding.modifiers.body) {
+                            el.originalPosition = document.body.style['position'];
+                            /** 目的是为了让弹窗充满整个body
+                            ['top', 'left'].forEach(property => {
+                                const scroll = property === 'top' ? 'scrollTop' : 'scrollLeft';
+                                el.maskStyle[property] = el.getBoundingClientRect()[property] +
+                                    document.body[scroll] +
+                                    document.documentElement[scroll] -
+                                    parseInt(document.body.style[`margin-${property}`], 10) +
+                                    'px';
+                            });
+                            ['height', 'width'].forEach(property => {
+                                el.maskStyle[property] = el.getBoundingClientRect()[property] + 'px';
+                            });
+                            **/
+                            insertDom(document.body, el, binding);
+                        } else {
+                            el.originalPosition = el.style['position'];
+                            insertDom(el, el, binding);
+                        }
+                    }
+                });
+            } else {
+                afterLeave(el.instance, _ => {
+                    if (!el.instance.hiding) return;
+                    el.domVisible = false;
+                    el.instance.hiding = false;
+                }, 300, true);
+                el.instance.visible = false;
+                el.instance.hiding = true;
+            }
+        };
+        const insertDom = (parent, el, binding) => {
+            // 判断 domVisible 以及 el 中样式是否消失或隐藏
+            if (!el.domVisible && el.style['display'] !== 'none' && el.style['visibility'] !== 'hidden') {
+                Object.keys(el.maskStyle).forEach(property => {
+                    el.mask.style[property] = el.maskStyle[property];
+                });
+
+                el.domVisible = true;
+
+                parent.appendChild(el.mask);
+                Vue.nextTick(() => {
+                    if (el.instance.hiding) {
+                        el.instance.$emit('after-leave');
+                    } else {
+                        el.instance.visible = true;
+                    }
+                });
+                el.domInserted = true;
+            } else if (el.domVisible && el.instance.hiding === true) {
+                el.instance.visible = true;
+                el.instance.hiding = false;
+            }
+        };
+        Vue.directive('loading', {
+            // 只调用一次 指令第一次绑定到元素时调用。在这里可以进行一次性的初始化设置
+            bind: function (el, binding, vnode) {
+                const textExr = el.getAttribute('element-loading-text');
+                const spinnerExr = el.getAttribute('element-loading-spinner');
+                const backgroundExr = el.getAttribute('element-loading-background');
+                const customClassExr = el.getAttribute('element-loading-custom-class');
+                const vm = vnode.context;
+                const mask = new Mask({
+                    el: document.createElement('div'),
+                    data: {
+                        text: vm && vm[textExr] || textExr,
+                        spinner: vm && vm[spinnerExr] || spinnerExr,
+                        background: vm && vm[backgroundExr] || backgroundExr,
+                        customClass: vm && vm[customClassExr] || customClassExr,
+                        fullscreen: !!binding.modifiers.fullscreen
+                    }
+                });
+                el.instance = mask;
+                el.mask = mask.$el;
+                el.maskStyle = {};
+
+                binding.value && toggleLoading(el, binding);
+            },
+            // 每次更新的时候就去修改 text
+            update: function (el, binding) {
+                el.instance.setText(el.getAttribute('element-loading-text'));
+                if (binding.oldValue !== binding.value) {
+                    toggleLoading(el, binding);
+                }
+            },
+
+            unbind: function (el, binding) {
+                if (el.domInserted) {
+                    el.mask &&
+                        el.mask.parentNode &&
+                        el.mask.parentNode.removeChild(el.mask);
+                    toggleLoading(el, { value: false, modifiers: binding.modifiers });
+                }
+                el.instance && el.instance.$destroy();
+            }
+        });
+        // }
+
+        // Vue.use(loadingDirective)
+
+        new Vue({
+            el: '#app',
+            data: function () {
+                return {
+                    fullscreenLoading: false
+                }
+            },
+            mounted() {
+                this.fullscreenLoading = true
+                setTimeout(() => {
+                    this.fullscreenLoading = false
+                }, 2000);
+            }
+        })
+    </script>
+</body>
+
+</html>
