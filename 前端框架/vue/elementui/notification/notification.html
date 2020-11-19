@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> notification 组件分析</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+        }
+        #click-button{
+            width: 200px;
+            height: 200px;
+            margin: auto;
+            background-color: aquamarine;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="click-button" @click="testClick"></div>
+    </div>
+    <script src="../vue2.js"></script>
+    <script>
+        let typeMap = {
+            success: 'success',
+            info: 'info',
+            warning: 'warning',
+            error: 'error'
+        };
+        let _notification = Vue.component("notification", {
+            template: `<transition name="el-notification-fade">
+                            <div :class="['el-notification', customClass, horizontalClass]" v-show="visible" :style="positionStyle"
+                                @mouseenter="clearTimer()" @mouseleave="startTimer()" @click="click" role="alert">
+                                <i class="el-notification__icon" :class="[ typeClass, iconClass ]" v-if="type || iconClass">
+                                </i>
+                                <div class="el-notification__group" :class="{ 'is-with-icon': typeClass || iconClass }">
+                                    <h2 class="el-notification__title" v-text="title"></h2>
+                                    <div class="el-notification__content" v-show="message">
+                                        <slot>
+                                            <p v-if="!dangerouslyUseHTMLString">{{ message }}</p>
+                                            <p v-else v-html="message"></p>
+                                        </slot>
+                                    </div>
+                                    <div class="el-notification__closeBtn el-icon-close" v-if="showClose" @click.stop="close"></div>
+                                </div>
+                            </div>
+                        </transition>`,
+            data() {
+                return {
+                    visible: false,
+                    title: '',
+                    message: '',
+                    duration: 4500,
+                    type: '',
+                    showClose: true,
+                    customClass: '',
+                    iconClass: '',
+                    onClose: null,
+                    onClick: null,
+                    closed: false,
+                    verticalOffset: 0,
+                    timer: null,
+                    dangerouslyUseHTMLString: false,
+                    position: 'top-right'
+                }
+            },
+
+            computed: {
+                typeClass() {
+                    return this.type && typeMap[this.type] ? `el-icon-${typeMap[this.type]}` : '';
+                },
+
+                horizontalClass() {
+                    return this.position.indexOf('right') > -1 ? 'right' : 'left';
+                },
+
+                verticalProperty() {
+                    return /^top-/.test(this.position) ? 'top' : 'bottom';
+                },
+
+                positionStyle() {
+                    return {
+                        [this.verticalProperty]: `${this.verticalOffset}px`
+                    };
+                }
+            },
+
+            watch: {
+                closed(newVal) {
+                    if (newVal) {
+                        this.visible = false;
+                        this.$el.addEventListener('transitionend', this.destroyElement);
+                    }
+                }
+            },
+
+            methods: {
+                destroyElement() {
+                    this.$el.removeEventListener('transitionend', this.destroyElement);
+                    this.$destroy(true);
+                    this.$el.parentNode.removeChild(this.$el);
+                },
+
+                click() {
+                    if (typeof this.onClick === 'function') {
+                        this.onClick();
+                    }
+                },
+
+                close() {
+                    this.closed = true;
+                    if (typeof this.onClose === 'function') {
+                        this.onClose();
+                    }
+                },
+
+                clearTimer() {
+                    clearTimeout(this.timer);
+                },
+
+                startTimer() {
+                    if (this.duration > 0) {
+                        this.timer = setTimeout(() => {
+                            if (!this.closed) {
+                                this.close();
+                            }
+                        }, this.duration);
+                    }
+                },
+                keydown(e) {
+                    // e.keyCode === 46 是 del键 e.keyCode === 8  是退格键
+                    if (e.keyCode === 46 || e.keyCode === 8) {
+                        this.clearTimer(); // detele 取消倒计时
+                    } else if (e.keyCode === 27) { // esc关闭消息
+                        if (!this.closed) {
+                            this.close();
+                        }
+                    } else {
+                        this.startTimer(); // 恢复倒计时
+                    }
+                }
+            },
+            mounted() {
+                if (this.duration > 0) {
+                    this.timer = setTimeout(() => {
+                        if (!this.closed) {
+                            this.close();
+                        }
+                    }, this.duration);
+                }
+                document.addEventListener('keydown', this.keydown);
+            },
+            beforeDestroy() {
+                document.removeEventListener('keydown', this.keydown);
+            }
+        })
+
+        let merge = Object.assign;
+
+        function hasOwn(obj, key) {
+            return Object.prototype.hasOwnProperty.call(obj, key);
+        };
+        function isVNode(node) {
+            return node !== null && typeof node === 'object' && hasOwn(node, 'componentOptions');
+        };
+        const NotificationConstructor = Vue.extend(_notification);
+
+        let instance;
+        let instances = [];
+        let seed = 1;
+
+        const Notification = function (options) {
+            if (Vue.prototype.$isServer) return;
+            options = merge({}, options);
+            const userOnClose = options.onClose;
+            const id = 'notification_' + seed++;
+            const position = options.position || 'top-right';
+
+            options.onClose = function () {
+                Notification.close(id, userOnClose);
+            };
+
+            instance = new NotificationConstructor({
+                data: options
+            });
+
+            if (isVNode(options.message)) {
+                instance.$slots.default = [options.message];
+                options.message = 'REPLACED_BY_VNODE';
+            }
+            instance.id = id;
+            instance.$mount();
+            document.body.appendChild(instance.$el);
+            instance.visible = true;
+            instance.dom = instance.$el;
+            // instance.dom.style.zIndex = PopupManager.nextZIndex();
+
+            let verticalOffset = options.offset || 0;
+            instances.filter(item => item.position === position).forEach(item => {
+                verticalOffset += item.$el.offsetHeight + 16;
+            });
+            verticalOffset += 16;
+            instance.verticalOffset = verticalOffset;
+            instances.push(instance);
+            return instance;
+        };
+
+        ['success', 'warning', 'info', 'error'].forEach(type => {
+            Notification[type] = options => {
+                if (typeof options === 'string' || isVNode(options)) {
+                    options = {
+                        message: options
+                    };
+                }
+                options.type = type;
+                return Notification(options);
+            };
+        });
+
+        Notification.close = function (id, userOnClose) {
+            let index = -1;
+            const len = instances.length;
+            const instance = instances.filter((instance, i) => {
+                if (instance.id === id) {
+                    index = i;
+                    return true;
+                }
+                return false;
+            })[0];
+            if (!instance) return;
+
+            if (typeof userOnClose === 'function') {
+                userOnClose(instance);
+            }
+            instances.splice(index, 1);
+
+            if (len <= 1) return;
+            const position = instance.position;
+            const removedHeight = instance.dom.offsetHeight;
+            for (let i = index; i < len - 1; i++) {
+                if (instances[i].position === position) {
+                    instances[i].dom.style[instance.verticalProperty] =
+                        parseInt(instances[i].dom.style[instance.verticalProperty], 10) - removedHeight - 16 + 'px';
+                }
+            }
+        };
+
+        Notification.closeAll = function () {
+            for (let i = instances.length - 1; i >= 0; i--) {
+                instances[i].close();
+            }
+        };
+        Vue.prototype.$notify = Notification;
+        
+        new Vue({
+            el: '#app',
+            data: function () {
+                return {
+
+                }
+            },
+            methods:{
+                testClick(){
+                    this.$notify({
+                        title: '提示',
+                        message: '这是一条不会自动关闭的消息',
+                        duration: 0
+                    });
+                }
+            },
+            mounted() {
+
+            }
+        })
+    </script>
+</body>
+
+</html>
