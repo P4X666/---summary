@@ -1,0 +1,16 @@
+{
+  "name": "---summary",
+  "version": "1.0.0",
+  "private": true,
+  "repository": "https://github.com/P4X666/---summary.git",
+  "author": "pengshixing <2644378911@qq.com>",
+  "workspaces": [
+    "packages/*"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.14.6",
+    "lerna": "^6.5.1",
+    "typescript": "^4.9.5"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "lib": ["dom", "es2017"],
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@engineering/*": ["./packages/engineering/*"],
+      "@nativejs/*": ["./packages/nativejs/*"],
+      "@nodejs/*": ["./packages/nodejs/*"],
+      "@utils/*": ["./packages/utils/*"],
+    },
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "references": [
+    { "path": "./packages/engineering" },
+    { "path": "./packages/nativejs" },
+    { "path": "./packages/nodejs" },
+    { "path": "./packages/utils" },
+  ]
+}
