@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>跳一跳小游戏</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+  <script src="https://www.unpkg.com/three@0.154.0/build/three.js"></script>
+  <style>
+    #score {
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      color: #fff;
+      font-size: 50px;
+    }
+
+    #fail {
+      position: fixed;
+      right: 0;
+      left: 0;
+      display: none;
+      width: 100%;
+      height: 100%;
+      padding-top: 200px;
+      text-align: center;
+      color: #fff;
+      font-size: 70px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .reload-btn {
+      width: 160px;
+      height: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="score">0</div>
+  <div id="fail">
+    <div>
+      您的分数为 <span id="score2">0</span>
+    </div>
+    <button class="reload-btn">再来一局</button>
+  </div>
+  <script>
+    /** 将dom相关的事件提取出来，方便后续跨平台 */
+    const isMobileDevice = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const addEventListener = (eventName, callback) => document.body.addEventListener(eventName, callback);
+    const removeEventListener = (eventName, callback) => document.body.removeEventListener(eventName, callback);
+    /** 展示分数弹窗 */
+    const showScoreModal = (score) => {
+      document.getElementById('fail').style.display = 'block';
+      document.getElementById('score2').innerHTML = score;
+    }
+    const getDeviceEventName = (isPhone) => {
+      // 当前设备是手机
+      if (isPhone) {
+        return { MOUSEDOWN: "touchstart", MOUSEUP: "touchend" };
+      }
+      // 当前设备是 PC
+      return { MOUSEDOWN: "mousedown", MOUSEUP: "mouseup" };
+    }
+    /** 将即将渲染的dom添加到页面上 */
+    const addDom2Document = (dom) => {
+      document.body.appendChild(dom);
+    }
+
+    const reloadBtn = document.getElementsByClassName("reload-btn")[0];
+    reloadBtn.addEventListener("click", () => {
+      window.location.reload();
+    });
+
+    class JumpGame {
+      scene = new THREE.Scene();
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      camera;
+      player;
+      speed = 0;
+      speedY = 0;
+      pressed = false;
+      direction = 'right';
+      cameraFocus = { x: 0, y: 0, z: 0 };
+      currentCubePos = { x: 0, y: 0, z: 0 };
+      stopped = true;
+      /** 
+       * 响应式更新分数
+       *  */
+      _score = -1;
+      set score(newValue) {
+        this._score = newValue;
+        document.getElementById('score').innerHTML = this._score;
+      }
+      get score() {
+        return this._score;
+      }
+      /** 
+       * 游戏开启和结束的标记
+       * 如果为 true，则游戏开始，否则游戏结束
+       *  */
+      _gameFlag = false;
+      set gameFlag(newValue) {
+        this._gameFlag = newValue;
+        const mousedown = () => {
+          this.speed = 0;
+          this.speedY = 0;
+          this.pressed = true;
+        }
+        const mouseup = () => {
+          this.pressed = false;
+        }
+        const eventName = getDeviceEventName(isMobileDevice());
+        if (newValue) {
+          // 游戏开始，添加事件
+          addEventListener(eventName.MOUSEDOWN, mousedown);
+          addEventListener(eventName.MOUSEUP, mouseup);
+        } else {
+          // 如果游戏已结束，则直接更新结果页的分数，并销毁事件
+          showScoreModal(this._score);
+          removeEventListener(eventName.MOUSEDOWN, mousedown);
+          removeEventListener(eventName.MOUSEUP, mouseup);
+        }
+      }
+      get gameFlag() {
+        return this._gameFlag;
+      }
+
+      constructor(width, height) {
+        this.init(width, height);
+      }
+      init(width, height) {
+        this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        this.camera.position.set(100, 100, 100);
+        this.camera.lookAt(this.scene.position);
+        this.renderer.setSize(width, height);
+        this.renderer.setClearColor(0x333333);
+        addDom2Document(this.renderer.domElement);
+        const directionalLight = new THREE.DirectionalLight(0xffffff);
+        directionalLight.position.set(40, 100, 60);
+        this.scene.add(directionalLight);
+        this.gameFlag = true;
+      }
+      createCube(x, z) {
+        const geometry = new THREE.BoxGeometry(30, 20, 30);
+        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.x = x;
+        cube.position.z = z;
+        this.scene.add(cube);
+      }
+      create() {
+        const createPlayer = () => {
+          const geometry = new THREE.BoxGeometry(5, 15, 5);
+          const material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+          const player = new THREE.Mesh(geometry, material);
+          player.position.x = 0;
+          player.position.y = 17.5;
+          player.position.z = 0;
+          this.scene.add(player);
+          return player;
+        };
+
+        this.player = createPlayer();
+        this.createCube(0, 0);
+      }
+      /** 锁定视角 */
+      moveCamera() {
+        if (this.player.position.y > 17.5) {
+          if (this.direction === 'right') {
+            this.camera.position.z -= this.speed;
+            this.cameraFocus.z -= this.speed;
+          } else {
+            this.camera.position.x -= this.speed;
+            this.cameraFocus.x -= this.speed;
+          }
+
+          this.camera.lookAt(this.cameraFocus.x, this.cameraFocus.y, this.cameraFocus.z);
+        }
+      }
+      playerInCube() {
+        if (this.direction === 'right') {
+          if (
+            this.player.position.z < this.currentCubePos.z + 15 &&
+            this.player.position.z > this.currentCubePos.z - 15
+          ) {
+            return true;
+          }
+        } else if (this.direction === 'left') {
+          if (
+            this.player.position.x < this.currentCubePos.x + 15 &&
+            this.player.position.x > this.currentCubePos.x - 15
+          ) {
+            return true;
+          }
+        }
+        return false;
+      }
+      movePlayer() {
+        this.player.position.y += this.speedY;
+
+        if (this.player.position.y < 17.5) {
+          this.player.position.y = 17.5;
+
+          if (this.stopped === false) {
+            if (this.playerInCube()) {
+              this.score += 1;
+              const distance = Math.floor(50 + Math.random() * 100);
+
+              const num = Math.random();
+              if (num > 0.5) {
+                this.currentCubePos.z -= distance;
+                this.direction = 'right';
+              } else {
+                this.currentCubePos.x -= distance;
+                this.direction = 'left';
+              }
+              this.createCube(this.currentCubePos.x, this.currentCubePos.z);
+            } else {
+              this.gameFlag = false;
+            }
+          }
+
+          this.stopped = true;
+        } else {
+          this.stopped = false;
+          if (this.direction === 'right') {
+            this.player.position.z -= this.speed;
+          } else {
+            this.player.position.x -= this.speed;
+          }
+        }
+        this.speedY -= 0.3;
+      }
+
+      speedUp() {
+        if (this.pressed) {
+          this.speed += 0.1;
+          this.speedY += 0.1;
+
+          if (this.player.scale.y > 0) {
+            this.player.scale.y -= 0.001;
+          }
+          this.player.position.y -= 15 - 15 * this.player.scale.y;
+
+          if (this.player.position.y < 10) {
+            this.player.position.y = 10;
+          }
+        } else {
+          this.player.scale.y = 1;
+        }
+      }
+
+      render() {
+        if (!this.pressed) {
+          this.moveCamera();
+          this.movePlayer();
+        }
+        this.speedUp();
+        this.renderer.render(this.scene, this.camera);
+        requestAnimationFrame(() => {
+          // 当游戏停止，则相关动态渲染停止
+          if (this._gameFlag) {
+            this.render();
+          }
+        });
+      }
+    }
+
+    const gameHandle = new JumpGame(window.innerWidth, window.innerHeight);
+    gameHandle.create();
+    gameHandle.render();
+  </script>
+</body>
+
+</html>
